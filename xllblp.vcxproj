@@ -17,6 +17,7 @@
     <ClCompile Include="Element.cpp" />
     <ClCompile Include="Session.cpp" />
     <ClCompile Include="SessionOptions.cpp" />
+    <ClCompile Include="xllblp.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6D126BC4-2738-4D72-BD8D-5BA767A1E969}</ProjectGuid>
