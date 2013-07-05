@@ -1,4 +1,5 @@
-// SessionOptions.cpp - Open Bloomberg SessionOptions
+// SessionOptions.cpp - blpapi SessionOptions
+// Copyright KALX, LLC. All rights reserved. No warranty made.
 #pragma warning(disable: 4244 4127 4505)
 #include "blpapi_sessionoptions.h"
 #include "xllblp.h"

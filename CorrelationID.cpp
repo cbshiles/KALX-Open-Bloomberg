@@ -1,4 +1,5 @@
 // CorrelationID.cpp - blpapi CorrelationID class
+// Copyright KALX, LLC. All rights reserved. No warranty made.
 #include "blpapi_correlationid.h"
 #include "xllblp.h"
 
@@ -13,6 +14,7 @@ XLL_ENUM_DOC(BLPAPI_CORRELATION_TYPE_AUTOGEN, BLPAPI_CORRELATION_TYPE_AUTOGEN, C
 
 static AddIn xai_blp_correlation_id(
 	Function(XLL_HANDLE, "?xll_blp_correlation_id", "BLP.CORRELATION.ID")
+	.Arg(XLL_LONG, "Id", "is the integer Id to use. ")
 	.Uncalced()
 	.Category(CATEGORY)
 	.FunctionHelp("Return a handle to a key used to identify individual subscriptions or requests.")
@@ -83,14 +85,13 @@ static AddIn xai_blp_correlation_id(
 	)
 );
 HANDLEX WINAPI
-xll_blp_correlation_id(void)
+xll_blp_correlation_id(LONG id)
 {
 #pragma XLLEXPORT
 	HANDLEX h(0);
 
 	try {
-		handle<CorrelationId> cid(new CorrelationId());
-
+		handle<CorrelationId> cid(new CorrelationId(id));
 		h = cid.get();
 	}
 	catch (const std::exception& ex) {
@@ -99,3 +100,63 @@ xll_blp_correlation_id(void)
 
 	return h;
 }
+
+static AddIn xai_blp_correlation_id_value_type(
+	Function(XLL_LONG, "?xll_blp_correlation_id_value_type", "BLP.CORRELATION.ID.VALUE.TYPE")
+	.Arg(XLL_HANDLE, "CorrelationID", "is a handle returned by BLP.CORRELATION.ID. ")
+	.Category(CATEGORY)
+	.FunctionHelp("Return the value type associated with CorrelationID.")
+	.Documentation(
+		"The value types are specified by the <codeInline>BLPAPI_CORRELATION_TYPE_*</codeInline> enumeration. "
+	)
+);
+LONG WINAPI
+xll_blp_correlation_id_value_type(HANDLEX cid)
+{
+#pragma XLLEXPORT
+	LONG type(0);
+
+	try {
+		handle<CorrelationId> hcid(cid,false);
+		ensure (hcid);
+
+		type = hcid->valueType();
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+
+	return type;
+}
+
+static AddIn xai_blp_correlation_id_value(
+	Function(XLL_LONG, "?xll_blp_correlation_id_value", "BLP.CORRELATION.ID.VALUE")
+	.Arg(XLL_HANDLE, "CorrelationID", "is a handle returned by BLP.CORRELATION.ID. ")
+	.Category(CATEGORY)
+	.FunctionHelp("Return the value associated with CorrelationID.")
+	.Documentation(
+		"The CorrelationId must be either an <codeInline>TYPE_AUTOGET</codeInline> or <codeInline>TYPE_INT</codeInline>."
+	)
+);
+LONG WINAPI
+xll_blp_correlation_id_value(HANDLEX cid)
+{
+#pragma XLLEXPORT
+	LONG type(0);
+
+	try {
+		handle<CorrelationId> hcid(cid,false);
+		ensure (hcid);
+		ensure (hcid->valueType() == BLPAPI_CORRELATION_TYPE_AUTOGEN || hcid->valueType() == BLPAPI_CORRELATION_TYPE_INT);
+
+		type = static_cast<LONG>(hcid->asInteger());
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+
+	return type;
+}
+
+
+

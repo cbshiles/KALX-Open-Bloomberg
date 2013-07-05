@@ -1,4 +1,5 @@
 // session.cpp - blpapi Session class
+// Copyright KALX, LLC. All rights reserved. No warranty made.
 #pragma warning(disable: 4244 4127 4100)
 #include "blpapi_session.h"
 #include "xllblp.h"
@@ -12,7 +13,7 @@ static AddIn xai_blp_session(
 	.Arg(XLL_HANDLE, "Options", "is a handle returned by BLP.SESSION.OPTIONS", 0)
 	.Uncalced()
 	.Category(CATEGORY)
-	.FunctionHelp("Return a handle to and Open Bloomberg Session.")
+	.FunctionHelp("Return a handle to an Open Bloomberg Session.")
 );
 HANDLEX WINAPI
 xll_blp_session(HANDLEX so)
@@ -43,6 +44,152 @@ xll_blp_session(HANDLEX so)
 
 	return h;
 }
+
+static AddIn xai_blp_session_open_service(
+	Function(XLL_HANDLE, "?xll_blp_session_open_service", "BLP.SESSION.OPEN.SERVICE")
+	.Arg(XLL_HANDLE, "Session", "is a handle to a session.")
+	.Arg(XLL_CSTRING, "Uri", "is the name of the Service to open. ")
+	.Category(CATEGORY)
+	.FunctionHelp("Open the service specified by Uri and return the Session handle.")
+	.Documentation(
+        "Attempt to open the service identified by the specified "
+        "'uri' and block until the service is either opened "
+        "successfully or has failed to be opened. Return Session handle if "
+        "the service is opened successfully and 0 if the "
+        "service cannot be successfully opened. "
+        "</para><para>"
+        "The 'uri' must contain a fully qualified service name. That "
+        "is, it must be of the form \"//&lt;namespace&gt;/&lt;service-name&gt;\". "
+        "</para><para>"
+        "Before openService() returns a SERVICE_STATUS Event is "
+        "generated. If this is an asynchronous Session then this "
+        "Event may be processed by the registered EventHandler "
+        "before openService() has returned. "
+	)
+);
+HANDLEX WINAPI
+xll_blp_session_open_service(HANDLEX session, xcstr service)
+{
+#pragma XLLEXPORT
+	HANDLEX h(0);
+
+	try {
+		handle<Session> hs(session);
+
+		ensure (hs && hs->openService(service));
+
+		h = session;
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+
+	return h;
+}
+
+static AddIn xai_blp_session_get_service(
+	Function(XLL_HANDLE, "?xll_blp_session_get_service", "BLP.SESSION.GET.SERVICE")
+	.Arg(XLL_HANDLE, "Session", "is a handle to a session.")
+	.Arg(XLL_CSTRING, "Uri", "is the name of the Service to get. ")
+	.Uncalced()
+	.Category(CATEGORY)
+	.FunctionHelp("Return a handle to the Service specified by the Uri.")
+	.Documentation(
+        "The 'uri' must contain a fully qualified service name. That "
+        "is, it must be of the form \"//&lt;namespace&gt;/&lt;service-name&gt;\". "
+		"</para><para>"
+		"If the service identified by the specified 'uri' is not "
+        "open already then an InvalidStateException is thrown. "
+	)
+);
+HANDLEX WINAPI
+xll_blp_session_get_service(HANDLEX session, xcstr service)
+{
+#pragma XLLEXPORT
+	HANDLEX h(0);
+
+	try {
+		handle<Session> hs(session);
+		ensure (hs);
+		
+		Service svc = hs->getService(service);
+		handle<Service> hsvc(&svc); // lives until Session is terminated
+
+		h = hsvc.get();
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+
+	return h;
+}
+
+
+static AddInX xai_blp_session_send_request(
+	FunctionX(XLL_HANDLE, "?xll_blp_session_send_request", "BLP.SESSION.SEND.REQUEST")
+	.Arg(XLL_HANDLE, "Session", "is a handle to a Session.")
+	.Arg(XLL_HANDLE, "Request", "is a handle to a Request.")
+	.Arg(XLL_HANDLE, "CorrelationID", "is a handle to a CorrelationID or an integer. ")
+	.Category(CATEGORY)
+	.FunctionHelp(_T("Description."))
+#ifdef _DEBUG
+	.Documentation(_T("Documentation."))
+#endif
+	);
+HANDLEX WINAPI
+xll_blp_session_send_request(HANDLEX session, HANDLEX request, HANDLEX cid)
+{
+#pragma XLLEXPORT
+	HANDLEX h(0);
+
+	try {
+		handle<Session> hsession(session);
+		ensure (hsession);
+		handle<Request> hrequest(request);
+		ensure (hrequest);
+		handle<CorrelationId> hcid(cid);
+
+		hsession->sendRequest(*hrequest, hcid ? *hcid : CorrelationId(static_cast<long long>(cid)));
+		h = session;
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+
+	return h;
+}
+
+static AddInX xai_blp_session_next_event(
+	FunctionX(XLL_HANDLE, "?xll_blp_session_next_event", "BLP.SESSION.NEXT.EVENT")
+	.Arg(XLL_HANDLE, "Session", "is a handle to a Session.")
+	.Category(CATEGORY)
+	.FunctionHelp(_T("Description."))
+#ifdef _DEBUG
+	.Documentation(_T("Documentation."))
+#endif
+	);
+HANDLEX WINAPI
+xll_blp_session_next_event(HANDLEX session)
+{
+#pragma XLLEXPORT
+	HANDLEX h(0);
+
+	try {
+		handle<Session> hsession(session);
+		ensure (hsession);
+
+		Event e = hsession->nextEvent();
+		handle<Event> he(new Event(e));
+
+		h = he.get();
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+
+	return h;
+}
+
 /*
 static AddIn xai_blp_session_status(
 	Function(XLL_CSTRING, "?xll_session_status", "BLP.SESSION.STATUS")

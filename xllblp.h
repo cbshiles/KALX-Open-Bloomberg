@@ -7,6 +7,8 @@
 #define CATEGORY _T("BLP")
 #endif
 
-typedef xll::traits<XLOPERX>::xcstr xcstr; // pointer to const string
-typedef xll::traits<XLOPERX>::xword xword; // use for OPER and FP indices
+typedef xll::traits<XLOPERX>::xchar xchar;
+typedef xll::traits<XLOPERX>::xcstr xcstr;
+typedef xll::traits<XLOPERX>::xstring xstring;
+typedef xll::traits<XLOPERX>::xword xword;
 

@@ -14,7 +14,18 @@
     <ClInclude Include="xllblp.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CorrelationID.cpp" />
+    <ClCompile Include="Datetime.cpp">
+      <OmitFramePointers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</OmitFramePointers>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Element.cpp" />
+    <ClCompile Include="Event.cpp" />
+    <ClCompile Include="Message.cpp" />
+    <ClCompile Include="Request.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Service.cpp" />
     <ClCompile Include="Session.cpp" />
     <ClCompile Include="SessionOptions.cpp" />
     <ClCompile Include="xllblp.cpp" />
@@ -68,6 +79,7 @@
       </PrecompiledHeader>
       <MinimalRebuild>false</MinimalRebuild>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>true</UseFullPaths>
     </ClCompile>
     <Link>
       <LinkDLL>true</LinkDLL>
@@ -78,6 +90,8 @@
       <AdditionalDependencies>blpapi3_32.lib;xll.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>
       </ImportLibrary>
+      <DelayLoadDLLs>
+      </DelayLoadDLLs>
     </Link>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
