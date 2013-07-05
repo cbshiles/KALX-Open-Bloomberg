@@ -114,19 +114,19 @@ LONG WINAPI
 xll_blp_correlation_id_value_type(HANDLEX cid)
 {
 #pragma XLLEXPORT
-	LONG type(0);
+	LONG l(0);
 
 	try {
 		handle<CorrelationId> hcid(cid,false);
 		ensure (hcid);
 
-		type = hcid->valueType();
+		l = hcid->valueType();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
 	}
 
-	return type;
+	return l;
 }
 
 static AddIn xai_blp_correlation_id_value(
@@ -142,20 +142,20 @@ LONG WINAPI
 xll_blp_correlation_id_value(HANDLEX cid)
 {
 #pragma XLLEXPORT
-	LONG type(0);
+	LONG l(0);
 
 	try {
 		handle<CorrelationId> hcid(cid,false);
 		ensure (hcid);
 		ensure (hcid->valueType() == BLPAPI_CORRELATION_TYPE_AUTOGEN || hcid->valueType() == BLPAPI_CORRELATION_TYPE_INT);
 
-		type = static_cast<LONG>(hcid->asInteger());
+		l = static_cast<LONG>(hcid->asInteger());
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
 	}
 
-	return type;
+	return l;
 }
 
 

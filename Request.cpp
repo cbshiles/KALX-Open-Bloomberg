@@ -8,6 +8,67 @@ using namespace xll;
 using namespace BloombergLP;
 using namespace blpapi;
 
+static AddInX xai_blp_request_as_element(
+	FunctionX(XLL_HANDLE, "?xll_blp_request_as_element", "BLP.REQUEST.AS.ELEMENT")
+	.Arg(XLL_HANDLE, "Request", "is a handle to a Request. ")
+	.Category(CATEGORY)
+	.FunctionHelp("Returns the contents of this request as a modifiable Element.")
+#ifdef _DEBUG
+	.Documentation()
+#endif
+	);
+HANDLEX WINAPI
+xll_blp_request_as_element(HANDLEX request)
+{
+#pragma XLLEXPORT
+	HANDLEX h(0);
+
+	try {
+		handle<Request> hrequest(request,false);
+		ensure (hrequest);
+
+		Element e = hrequest->asElement();
+
+		h = p2h<Element>(&e);
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+
+	return h;
+}
+
+static AddInX xai_blp_request_get_element(
+	FunctionX(XLL_HANDLE, "?xll_blp_request_get_element", "BLP.REQUEST.GET.ELEMENT")
+	.Arg(XLL_HANDLE, "Request", "is a handle to a Request.")
+	.Arg(XLL_CSTRING, "Name", "is the Name of the Element to return. ")
+	.Category(CATEGORY)
+	.FunctionHelp("Returns the Element given its Name.")
+#ifdef _DEBUG
+	.Documentation()
+#endif
+	);
+HANDLEX WINAPI
+xll_blp_request_get_element(HANDLEX request, const char* name)
+{
+#pragma XLLEXPORT
+	HANDLEX h(0);
+
+	try {
+		handle<Request> hrequest(request,false);
+		ensure (hrequest);
+
+		Element e = hrequest->getElement(name);
+
+		h = p2h<Element>(&e);
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+
+	return h;
+}
+/*
 static AddInX xai_blp_request_set(
 	FunctionX(XLL_HANDLE, "?xll_blp_request_set", "BLP.REQUEST.SET")
 	.Arg(XLL_HANDLE, "Request", "is a handle to a Request.")
@@ -107,3 +168,4 @@ xll_blp_request_append(HANDLEX request, const char* name, LPOPER poValue)
 
 	return h;
 }
+*/

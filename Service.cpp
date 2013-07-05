@@ -26,13 +26,16 @@ xll_blp_service_num_operations(HANDLEX service)
 	LONG n(0);
 
 	try {
-		handle<Service> hsvc(service);
-		ensure (hsvc);
+		handle<Service> hs(service,false);
+		ensure (hs && hs->isValid());
 
-		n = hsvc->numOperations();
+		n = hs->numOperations();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
 	}
 
 	return n;
@@ -49,20 +52,23 @@ const char* WINAPI
 xll_blp_service_operation_name(HANDLEX service, USHORT index)
 {
 #pragma XLLEXPORT
-	const char* name(0);
+	const char* s(0);
 
 	try {
-		handle<Service> hservice(service);
-		ensure (hservice);
-		ensure (index < hservice->numOperations());
+		handle<Service> hs(service,false);
+		ensure (hs && hs->isValid());
+		ensure (index < hs->numOperations());
 
-		name = hservice->getOperation(index).name();
+		s = hs->getOperation(index).name();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
 	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
+	}
 
-	return name;
+	return s;
 }
 
 static AddIn xai_blp_service_operation_description(
@@ -76,20 +82,23 @@ const char* WINAPI
 xll_blp_service_operation_description(HANDLEX service, USHORT index)
 {
 #pragma XLLEXPORT
-	const char* description(0);
+	const char* s(0);
 
 	try {
-		handle<Service> hservice(service);
-		ensure (hservice);
-		ensure (index < hservice->numOperations());
+		handle<Service> hs(service,false);
+		ensure (hs && hs->isValid());
+		ensure (index < hs->numOperations());
 
-		description = hservice->getOperation(index).description();
+		s = hs->getOperation(index).description();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
 	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
+	}
 
-	return description;
+	return s;
 }
 
 static AddIn xai_blp_service_create_request(
@@ -115,16 +124,18 @@ xll_blp_service_create_request(HANDLEX service, const char* operation)
 	HANDLEX h(0);
 
 	try {
-		handle<Service> hsvc(service);
-		ensure (hsvc);
+		handle<Service> hs(service,false);
+		ensure (hs && hs->isValid());
 
-		Request req = hsvc->createRequest(operation);
-		handle<Request> hreq(&req);
+		Request req = hs->createRequest(operation);
 
-		h = hreq.get();
+		h = p2h<Request>(&req);
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
 	}
 
 	return h;

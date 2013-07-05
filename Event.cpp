@@ -37,13 +37,13 @@ LONG WINAPI
 xll_blp_event_type(HANDLEX event)
 {
 #pragma XLLEXPORT
-	int type(0);
+	int l(0);
 
 	try {
-		handle<Event> he(event);
+		handle<Event> he(event,false);
 		ensure (he && he->isValid());
 
-		type = he->eventType();
+		l = he->eventType();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -52,7 +52,7 @@ xll_blp_event_type(HANDLEX event)
 		XLL_ERROR(ex.description().c_str());
 	}
 
-	return type;
+	return l;
 }
 
 static AddIn xai_blp_message_iterator(
@@ -79,13 +79,12 @@ xll_blp_message_iterator(HANDLEX event)
 	HANDLEX h(0);
 
 	try {
-		handle<Event> he(event);
+		handle<Event> he(event,false);
 		ensure (he && he->isValid());
 
 		MessageIterator mi(*he);
-		handle<MessageIterator> hmi(&mi);
 
-		h = hmi.get();
+		h = p2h<MessageIterator>(&mi);
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -118,8 +117,8 @@ xll_blp_message_iterator_next(HANDLEX message_iterator)
 	BOOL b(1);
 
 	try {
-		handle<MessageIterator> hmi(message_iterator);
-		ensure (hmi);
+		handle<MessageIterator> hmi(message_iterator,false);
+		ensure (hmi && hmi->isValid());
 
 		b = hmi->next();
 	}
@@ -156,13 +155,12 @@ xll_blp_message_iterator_message(HANDLEX message_iterator, BOOL clone)
 	HANDLEX h(0);
 
 	try {
-		handle<MessageIterator> hmi(message_iterator);
-		ensure (hmi);
+		handle<MessageIterator> hmi(message_iterator,false);
+		ensure (hmi && hmi->isValid());
 
 		Message m(hmi->message(clone != 0)); // pulls in __imp__g_blpapiFunctionEntries
-		handle<Message> hm(&m);
 
-		h = hm.get();
+		h = p2h<Message>(&m);
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());

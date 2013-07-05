@@ -9,20 +9,20 @@ using namespace BloombergLP;
 using namespace blpapi;
 
 // scalar elements
-inline void setElement(Element& e, const char* name, const OPER& value)
+inline void setValue(Element& e, const OPER& value)
 {
 	switch (value.xltype) {
 	case xltypeNum:
-		e.setElement(name, value.val.num); // check if date???
+		e.setValue(value.val.num); // check if date???
 		break;
 	case xltypeStr:
-		e.setElement(name, to_string<XLOPER>(value).c_str());
+		e.setValue(to_string<XLOPER>(value).c_str());
 		break;
 	case xltypeBool:
-		e.setElement(name, value.val.xbool != 0);
+		e.setValue(value.val.xbool != 0);
 		break;
 	case xltypeInt: // never happens
-		e.setElement(name, value.val.w);
+		e.setValue(value.val.w);
 		break;
 	case xltypeMulti: 
 		{
@@ -30,10 +30,43 @@ inline void setElement(Element& e, const char* name, const OPER& value)
 		break;
 	}
 }
+// scalar elements
+inline OPER getValue(Element& e)
+{
+	switch (e.datatype()) {
+	case BLPAPI_DATATYPE_DATE:
+	case BLPAPI_DATATYPE_TIME:
+	case BLPAPI_DATATYPE_DATETIME:
+		return from_datetime(e.getValueAsDatetime());
+
+	case BLPAPI_DATATYPE_FLOAT64:
+		return OPER(e.getValueAsFloat64());
+
+	case BLPAPI_DATATYPE_FLOAT32:
+		return OPER(e.getValueAsFloat32());
+
+	case BLPAPI_DATATYPE_INT32:
+		return OPER(e.getValueAsInt32());
+
+	case BLPAPI_DATATYPE_INT64:
+		return OPER(static_cast<double>(e.getValueAsInt64()));
+
+	case BLPAPI_DATATYPE_CHAR:
+	case BLPAPI_DATATYPE_STRING:
+		return OPER(e.getValueAsString());
+
+	case BLPAPI_DATATYPE_BOOL:
+		return OPER(e.getValueAsBool());
+
+	default:
+		XLL_ERROR("getValue: unrecognized datatype");
+	}
+
+	return Err(xlerrNA);
+}
 
 static AddIn xai_blp_element(
 	Function(XLL_HANDLE, "?xll_blp_element", "BLP.ELEMENT")
-	.Arg(XLL_CSTRING, "Name", "is the Element Name.")
 	.Arg(XLL_LPOPER, "Value", "is the Element Value. ")
 	.Uncalced()
 	.Category(CATEGORY)
@@ -46,14 +79,14 @@ static AddIn xai_blp_element(
 	)
 );
 HANDLEX WINAPI
-xll_blp_element(const char* name, LPOPER pxValue)
+xll_blp_element(LPOPER pxValue)
 {
 #pragma XLLEXPORT
 	HANDLEX h(0);
 
 	try {
 		handle<Element> e(new Element());
-		setElement(*e, name, *pxValue);
+		setValue(*e, *pxValue); //??? fails
 
 		h = e.get();
 	}
@@ -66,6 +99,10 @@ xll_blp_element(const char* name, LPOPER pxValue)
 
 	return h;
 }
+
+//
+// Accessors
+//
 
 static AddIn xai_blp_element_name(
 	Function(XLL_CSTRING, "?xll_blp_element_name", "BLP.ELEMENT.NAME")
@@ -135,13 +172,13 @@ LONG WINAPI
 xll_blp_element_datatype(HANDLEX element)
 {
 #pragma XLLEXPORT
-	int datatype(0);
+	LONG l(0);
 
 	try {
-		handle<Element> he(element);
+		handle<Element> he(element,false);
 		ensure (he && he->isValid());
 
-		datatype = he->datatype();
+		l = he->datatype();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -150,11 +187,11 @@ xll_blp_element_datatype(HANDLEX element)
 		XLL_ERROR(ex.description().c_str());
 	}
 
-	return datatype;
+	return l;
 }
 
 static AddIn xai_blp_is_complex_type(
-	Function(XLL_LONG, "?xll_blp_is_complex_type", "BLP.ELEMENT.IS.COMPLEX.TYPE")
+	Function(XLL_BOOL, "?xll_blp_is_complex_type", "BLP.ELEMENT.IS.COMPLEX.TYPE")
 	.Arg(XLL_HANDLE, "Element", "is a handle to an Element.")
 	.Category(CATEGORY)
 	.FunctionHelp("Return true for complex Element types.")
@@ -167,13 +204,13 @@ BOOL WINAPI
 xll_blp_is_complex_type(HANDLEX element)
 {
 #pragma XLLEXPORT
-	bool type(false);
+	BOOL b(false);
 
 	try {
-		handle<Element> he(element);
+		handle<Element> he(element,false);
 		ensure (he && he->isValid());
 
-		type = he->isComplexType();
+		b = he->isComplexType();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -182,11 +219,11 @@ xll_blp_is_complex_type(HANDLEX element)
 		XLL_ERROR(ex.description().c_str());
 	}
 
-	return type;
+	return b;
 }
 
 static AddIn xai_blp_is_array(
-	Function(XLL_LONG, "?xll_blp_is_array", "BLP.ELEMENT.IS.ARRAY")
+	Function(XLL_BOOL, "?xll_blp_is_array", "BLP.ELEMENT.IS.ARRAY")
 	.Arg(XLL_HANDLE, "Element", "is a handle to an Element. ")
 	.Category(CATEGORY)
 	.FunctionHelp("Return true for nonscalar Elements.")
@@ -199,13 +236,13 @@ BOOL WINAPI
 xll_blp_is_array(HANDLEX element)
 {
 #pragma XLLEXPORT
-	bool array(false);
+	bool b(false);
 
 	try {
-		handle<Element> he(element);
+		handle<Element> he(element,false);
 		ensure (he && he->isValid());
 
-		array = he->isArray();
+		b = he->isArray();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -214,11 +251,11 @@ xll_blp_is_array(HANDLEX element)
 		XLL_ERROR(ex.description().c_str());
 	}
 
-	return array;
+	return b;
 }
 
 static AddIn xai_blp_is_null(
-	Function(XLL_LONG, "?xll_blp_is_null", "BLP.ELEMENT.IS.NULL")
+	Function(XLL_BOOL, "?xll_blp_is_null", "BLP.ELEMENT.IS.NULL")
 	.Arg(XLL_HANDLE, "Element", "is a handle to an Element. ")
 	.Category(CATEGORY)
 	.FunctionHelp("Return true if this element has a null value, and false otherwise.")
@@ -230,13 +267,13 @@ BOOL WINAPI
 xll_blp_is_null(HANDLEX element)
 {
 #pragma XLLEXPORT
-	bool null(false);
+	BOOL b(false);
 
 	try {
-		handle<Element> he(element);
+		handle<Element> he(element,false);
 		ensure (he && he->isValid());
 
-		null = he->isNull();
+		b = he->isNull();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -245,11 +282,11 @@ xll_blp_is_null(HANDLEX element)
 		XLL_ERROR(ex.description().c_str());
 	}
 
-	return null;
+	return b;
 }
 
 static AddIn xai_blp_is_read_only(
-	Function(XLL_LONG, "?xll_blp_is_read_only", "BLP.ELEMENT.IS.READ.ONLY")
+	Function(XLL_BOOL, "?xll_blp_is_read_only", "BLP.ELEMENT.IS.READ.ONLY")
 	.Arg(XLL_HANDLE, "Element", "is a handle to an Element. ")
 	.Category(CATEGORY)
 	.FunctionHelp("Return true if this element cannot be modified, and false otherwise.")
@@ -261,13 +298,13 @@ BOOL WINAPI
 xll_blp_is_read_only(HANDLEX element)
 {
 #pragma XLLEXPORT
-	bool readonly(false);
+	BOOL b(false);
 
 	try {
-		handle<Element> he(element);
+		handle<Element> he(element,false);
 		ensure (he && he->isValid());
 
-		readonly = he->isNull();
+		b = he->isNull();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -276,5 +313,193 @@ xll_blp_is_read_only(HANDLEX element)
 		XLL_ERROR(ex.description().c_str());
 	}
 
-	return readonly;
+	return b;
 }
+
+static AddIn xai_blp_num_values(
+	Function(XLL_LONG, "?xll_blp_num_values", "BLP.ELEMENT.NUM.VALUES")
+	.Arg(XLL_HANDLE, "Element", "is a handle to an Element. ")
+	.Category(CATEGORY)
+	.FunctionHelp("Return true if this element cannot be modified, and false otherwise.")
+	.Documentation(
+        "Return the number of values contained by this element. The number of "
+        "values is 0 if 'isNull()' returns true, and no greater than 1 if "
+        "'isComplexType()' returns true. The value returned will always be in "
+        "the range defined by 'elementDefinition().minValues()' and "
+        "'elementDefinition().maxValues()'. "
+	)
+);
+LONG WINAPI
+xll_blp_num_values(HANDLEX element)
+{
+#pragma XLLEXPORT
+	LONG l(0);
+
+	try {
+		handle<Element> he(element,false);
+		ensure (he && he->isValid());
+
+		l = he->numValues();
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
+	}
+
+	return l;
+}
+
+static AddIn xai_blp_num_elements(
+	Function(XLL_LONG, "?xll_blp_num_elements", "BLP.ELEMENT.NUM.ELEMENTS")
+	.Arg(XLL_HANDLE, "Element", "is a handle to an Element. ")
+	.Category(CATEGORY)
+	.FunctionHelp("Return true if this element cannot be modified, and false otherwise.")
+	.Documentation(
+        "Return the number of elements contained by this element.  The number "
+        "of elements is 0 if 'isComplex()' returns false, and no greater than "
+        "1 if the Datatype is CHOICE; if the DataType is SEQUENCE this may "
+        "return any number (including 0). "
+	)
+);
+LONG WINAPI
+xll_blp_num_elements(HANDLEX element)
+{
+#pragma XLLEXPORT
+	LONG l(0);
+
+	try {
+		handle<Element> he(element,false);
+		ensure (he && he->isValid());
+
+		l = he->numValues();
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
+	}
+
+	return l;
+}
+
+static AddIn xai_blp_is_valid(
+	Function(XLL_BOOL, "?xll_blp_is_valid", "BLP.ELEMENT.IS.READ.ONLY")
+	.Arg(XLL_HANDLE, "Element", "is a handle to an Element. ")
+	.Category(CATEGORY)
+	.FunctionHelp("Return true if this element is valid.")
+	.Documentation(
+		"An Element created using the default constructor is not valid until it has had a value assigned to it. "
+	)
+);
+BOOL WINAPI
+xll_blp_is_valid(HANDLEX element)
+{
+#pragma XLLEXPORT
+	BOOL b(false);
+
+	try {
+		handle<Element> he(element,false);
+
+		b = he->isValid();
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
+	}
+
+	return b;
+}
+
+static AddIn xai_blp_is_null_value(
+	Function(XLL_BOOL, "?xll_blp_is_null_value", "BLP.ELEMENT.IS.NULL.VALUE")
+	.Arg(XLL_HANDLE, "Element", "is a handle to an Element.")
+	.Arg(XLL_USHORT, "Index", "is the position of the sub element. ")
+	.Category(CATEGORY)
+	.FunctionHelp("Return true if sub Element at Index is null.")
+	.Documentation(
+		""
+	)
+);
+BOOL WINAPI
+xll_blp_is_null_value(HANDLEX element, USHORT i)
+{
+#pragma XLLEXPORT
+	BOOL b(false);
+
+	try {
+		handle<Element> he(element,false);
+		ensure (he && he->isValid());
+
+		b = he->isNullValue(i);
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
+	}
+
+	return b;
+}
+
+static AddIn xai_blp_element_get_value(
+	Function(XLL_LPOPER, "?xll_blp_element_get_value", "BLP.ELEMENT.GET.VALUE")
+	.Arg(XLL_HANDLE, "Element", "is a handle to an Element.")
+	.Arg(XLL_USHORT, "Index", "is an optional Index when Element is an array. ")
+	.Category(CATEGORY)
+	.FunctionHelp("Get Element value at Index.")
+	.Documentation(
+	)
+);
+LPOPER WINAPI
+xll_blp_element_get_value(HANDLEX element, USHORT i)
+{
+#pragma XLLEXPORT
+	static OPER o;
+
+	try {
+		handle<Element> he(element,false);
+		ensure (he && he->isValid());
+
+		Element e = he->getValueAsElement(i);
+		o = getValue(e);
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
+	}
+
+	return &o;
+}
+
+#ifdef _DEBUG
+
+int xll_test_element(void)
+{
+	try {
+		Element e;
+//		e.appendValue(true);
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+
+		return 0;
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
+
+		return 0;
+	}
+
+	return 1;
+}
+static Auto<Open> xao_test_element(xll_test_element);
+
+#endif // _DEBUG

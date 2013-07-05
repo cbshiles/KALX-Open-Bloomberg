@@ -1,4 +1,4 @@
-// session.cpp - blpapi Session class
+// session.cpp - blpapi Session	class
 // Copyright KALX, LLC. All rights reserved. No warranty made.
 #pragma warning(disable: 4244 4127 4100)
 #include "blpapi_session.h"
@@ -23,8 +23,8 @@ xll_blp_session(HANDLEX so)
 
 	try {
 		if (so) {
-			handle<SessionOptions> hso(so);
-			ensure (so);
+			handle<SessionOptions> hso(so,false);
+			ensure (hso);
 			handle<Session> hs(new Session(*hso));
 
 			h = hs.get();
@@ -68,20 +68,23 @@ static AddIn xai_blp_session_open_service(
 	)
 );
 HANDLEX WINAPI
-xll_blp_session_open_service(HANDLEX session, xcstr service)
+xll_blp_session_open_service(HANDLEX session, const char* service)
 {
 #pragma XLLEXPORT
 	HANDLEX h(0);
 
 	try {
-		handle<Session> hs(session);
-
-		ensure (hs && hs->openService(service));
+		handle<Session> hs(session,false);
+		ensure (hs);
+		ensure (hs->openService(service));
 
 		h = session;
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
 	}
 
 	return h;
@@ -103,22 +106,24 @@ static AddIn xai_blp_session_get_service(
 	)
 );
 HANDLEX WINAPI
-xll_blp_session_get_service(HANDLEX session, xcstr service)
+xll_blp_session_get_service(HANDLEX session, const char* service)
 {
 #pragma XLLEXPORT
 	HANDLEX h(0);
 
 	try {
-		handle<Session> hs(session);
+		handle<Session> hs(session,false);
 		ensure (hs);
 		
-		Service svc = hs->getService(service);
-		handle<Service> hsvc(&svc); // lives until Session is terminated
+		Service svc = hs->getService(service); // lives until Session is terminated
 
-		h = hsvc.get();
+		h = p2h<Service>(&svc);
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
 	}
 
 	return h;
@@ -143,17 +148,20 @@ xll_blp_session_send_request(HANDLEX session, HANDLEX request, HANDLEX cid)
 	HANDLEX h(0);
 
 	try {
-		handle<Session> hsession(session);
+		handle<Session> hsession(session,false);
 		ensure (hsession);
-		handle<Request> hrequest(request);
+		handle<Request> hrequest(request,false);
 		ensure (hrequest);
-		handle<CorrelationId> hcid(cid);
+		handle<CorrelationId> hcid(cid,false);
 
 		hsession->sendRequest(*hrequest, hcid ? *hcid : CorrelationId(static_cast<long long>(cid)));
 		h = session;
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
 	}
 
 	return h;
@@ -175,16 +183,18 @@ xll_blp_session_next_event(HANDLEX session)
 	HANDLEX h(0);
 
 	try {
-		handle<Session> hsession(session);
+		handle<Session> hsession(session,false);
 		ensure (hsession);
 
 		Event e = hsession->nextEvent();
-		handle<Event> he(new Event(e));
 
-		h = he.get();
+		h = p2h<Event>(&e);
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
 	}
 
 	return h;
@@ -233,6 +243,9 @@ xll_blp_session_status(HANDLEX hSession)
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
+	}
+	catch (const Exception& ex) {
+		XLL_ERROR(ex.description().c_str());
 	}
 
 	return status;

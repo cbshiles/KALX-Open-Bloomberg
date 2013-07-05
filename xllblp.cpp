@@ -1,5 +1,8 @@
 // xllblp.cpp - blpapi Excel wrappers
 // Copyright KALX, LLC. All rights reserved. No warranty made.
+/*
+Exported functions in blpapi_dispatchtbl.h cause delay loading to fail at link time.
+*/
 #include "xllblp.h"
 
 using namespace xll;
@@ -15,6 +18,7 @@ static AddIn xai_blp(
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 int xll_add_path(void)
 {
+//	_crtBreakAlloc = 5349;
 	try {
 		xchar base[_MAX_PATH];
 		xchar path[0xFFFF];

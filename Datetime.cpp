@@ -8,6 +8,24 @@ using namespace xll;
 using namespace BloombergLP;
 using namespace blpapi;
 
+BloombergLP::blpapi::Datetime xll::to_datetime(const OPER& d)
+{
+	return BloombergLP::blpapi::Datetime(
+		static_cast<int>(XLL_XLF(Year, d)), 
+		static_cast<int>(XLL_XLF(Month, d)), 
+		static_cast<int>(XLL_XLF(Day, d)), 
+		static_cast<int>(XLL_XLF(Hour, d)), 
+		static_cast<int>(XLL_XLF(Minute, d)), 
+		static_cast<int>(XLL_XLF(Second, d))
+	);
+}
+OPER xll::from_datetime(const BloombergLP::blpapi::Datetime& d)
+{
+	return OPER(XLL_XLF(Date, OPER(d.year()), OPER(d.month()), OPER(d.day()))
+			    + XLL_XLF(Time, OPER(d.hours()), OPER(d.minutes()), OPER(d.seconds())));
+}
+
+
 static AddIn xai_blp_datetime_set(
 	Function(XLL_HANDLE, "?xll_blp_datetime_set", "BLP.DATETIME.SET")
 	.Arg(XLL_DOUBLE, "Date", "is an Excel Julian Date. ")
@@ -25,15 +43,7 @@ xll_blp_datetime_set(double date)
 	HANDLEX h(0);
 
 	try {
-		OPER d(date);
-		handle<Datetime> hdate(new Datetime(
-			static_cast<int>(XLL_XLF(Year, d)), 
-			static_cast<int>(XLL_XLF(Month, d)), 
-			static_cast<int>(XLL_XLF(Day, d)), 
-			static_cast<int>(XLL_XLF(Hour, d)), 
-			static_cast<int>(XLL_XLF(Minute, d)), 
-			static_cast<int>(XLL_XLF(Second, d))
-		));
+		handle<Datetime> hdate(new Datetime(to_datetime(OPER(date))));
 
 		h = hdate.get();
 	}
@@ -61,13 +71,9 @@ xll_blp_datetime_get(HANDLEX date)
 	double d(0);
 
 	try {
-		handle<Datetime> hdate(date);
-		ensure (hdate);
+		handle<Datetime> hdate(date,false);
 
-		OPER x = XLL_XLF(Date, OPER(hdate->year()), OPER(hdate->month()), OPER(hdate->day()));
-		x = x +  XLL_XLF(Time, OPER(hdate->hours()), OPER(hdate->minutes()), OPER(hdate->seconds()));
-
-		d = x.val.num;
+		d = from_datetime(*hdate);
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
